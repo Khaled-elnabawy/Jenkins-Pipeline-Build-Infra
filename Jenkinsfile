@@ -2,34 +2,52 @@ pipeline {
     agent any
 
     environment {
-        AWS_DEFAULT_REGION = "us-east-1"
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/<your-username>/<your-new-repo>.git'
+                git branch: 'main', url: 'https://github.com/Ahmedlebshten/Jenkins-Project'
             }
         }
 
-        stage('Terraform Init') {
+        stage('Terraform FMT') {
             steps {
-                sh 'terraform init'
+                sh '''
+                    cd terraform
+                    terraform fmt -check
+                '''
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                sh '''
+                    cd terraform
+                    terraform init -backend=false
+                    terraform validate
+                '''
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                sh 'terraform plan -out=tfplan'
+                sh '''
+                    cd terraform
+                    terraform plan
+                '''
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                input message: 'Apply changes?', ok: 'Yes, Apply'
-                sh 'terraform apply -auto-approve tfplan'
+                input message: 'Apply changes?', ok: 'Yes, apply'
+                sh '''
+                    cd terraform
+                    terraform apply -auto-approve
+                '''
             }
         }
     }
