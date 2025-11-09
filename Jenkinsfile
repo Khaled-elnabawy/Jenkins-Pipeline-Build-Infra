@@ -54,7 +54,7 @@ pipeline {
             steps {
                 echo "🔹 Validating Terraform configuration..."
                 sh '''
-                    terraform init -backend=false
+                    terraform init -reconfigure
                     terraform validate
                 '''
             }
