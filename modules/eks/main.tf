@@ -49,17 +49,17 @@ resource "aws_eks_cluster" "main" {
     security_group_ids      = [var.cluster_security_group_id]
   }
 
-  access_config {
-    authentication_mode = "API_AND_CONFIG_MAP"
+  dynamic "encryption_config" {
+    for_each = var.enable_cluster_encryption ? [1] : []
+    content {
+      provider {
+        key_arn = aws_kms_key.eks[0].arn
+      }
+      resources = ["secrets"]
+    }
   }
 
   enabled_cluster_log_types = var.cluster_log_types
-
-  lifecycle {
-    ignore_changes = [
-      access_config[0].authentication_mode
-    ]
-  }
 
   depends_on = [
     aws_cloudwatch_log_group.eks_cluster
@@ -71,22 +71,6 @@ resource "aws_eks_cluster" "main" {
       Name = "${var.project_name}-${var.environment}-cluster"
     }
   )
-}
-
-# Grant Jenkins EC2 Role admin access to EKS cluster
-resource "aws_eks_access_entry" "jenkins_ec2_access" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = "arn:aws:iam::420606830171:role/Jenkins-EC2-Role"
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "jenkins_admin_access" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = aws_eks_access_entry.jenkins_ec2_access.principal_arn
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  access_scope {
-    type = "cluster"
-  }
 }
 
 # EKS Node Groups - One per Availability Zone for HA
@@ -127,8 +111,7 @@ resource "aws_eks_node_group" "main" {
   )
 
   depends_on = [
-    aws_eks_cluster.main,
-    aws_eks_access_entry.jenkins_ec2_access
+    aws_eks_cluster.main
   ]
 
   lifecycle {
@@ -139,14 +122,14 @@ resource "aws_eks_node_group" "main" {
 
 # EKS Add-ons
 resource "aws_eks_addon" "vpc_cni" {
-  cluster_name                = aws_eks_cluster.main.name
-  addon_name                  = "vpc-cni"
-  addon_version               = data.aws_eks_addon_version.vpc_cni.version
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "vpc-cni"
+  addon_version            = data.aws_eks_addon_version.vpc_cni.version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
-
-  depends_on = [aws_eks_node_group.main]
-
+  
+  depends_on = [aws_eks_node_group.main] 
+  
   tags = merge(
     var.tags,
     {
@@ -156,9 +139,9 @@ resource "aws_eks_addon" "vpc_cni" {
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  cluster_name                = aws_eks_cluster.main.name
-  addon_name                  = "kube-proxy"
-  addon_version               = data.aws_eks_addon_version.kube_proxy.version
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "kube-proxy"
+  addon_version            = data.aws_eks_addon_version.kube_proxy.version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -171,13 +154,11 @@ resource "aws_eks_addon" "kube_proxy" {
 }
 
 resource "aws_eks_addon" "coredns" {
-  cluster_name                = aws_eks_cluster.main.name
-  addon_name                  = "coredns"
-  addon_version               = data.aws_eks_addon_version.coredns.version
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "coredns"
+  addon_version            = data.aws_eks_addon_version.coredns.version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
-
-  depends_on = [aws_eks_node_group.main]
 
   tags = merge(
     var.tags,
@@ -185,12 +166,16 @@ resource "aws_eks_addon" "coredns" {
       Name = "${var.project_name}-${var.environment}-coredns-addon"
     }
   )
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
 }
 
 resource "aws_eks_addon" "ebs_csi_driver" {
-  cluster_name                = aws_eks_cluster.main.name
-  addon_name                  = "aws-ebs-csi-driver"
-  addon_version               = data.aws_eks_addon_version.ebs_csi.version
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = data.aws_eks_addon_version.ebs_csi.version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
 
@@ -226,3 +211,4 @@ data "aws_eks_addon_version" "ebs_csi" {
   kubernetes_version = var.cluster_version
   most_recent        = true
 }
+
