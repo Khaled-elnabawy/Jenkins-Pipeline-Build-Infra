@@ -30,34 +30,28 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-            when {
-                expression { return params.APPLY == true }
-            }
             steps {
-                echo "🔹 Applying Terraform plan..."
+                echo "🔹 Applying Terraform..."
                 sh 'terraform apply -auto-approve tfplan'
-                echo "✅ Terraform infrastructure deployed successfully!"
+                echo "✅ Infrastructure deployed successfully!"
             }
         }
 
         stage('Terraform Destroy') {
-            when {
-                expression { return params.DESTROY == true }
-            }
             steps {
-                echo "⚠️ Destroying Terraform infrastructure..."
+                echo "🗑️ Destroying Terraform infrastructure..."
                 sh 'terraform destroy -auto-approve'
-                echo "🗑️ Infrastructure destroyed successfully!"
+                echo "🔥 Infrastructure destroyed successfully!"
             }
         }
     }
 
     post {
         success {
-            echo "🎉 Pipeline executed successfully!"
+            echo "🎉 Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check logs."
+            echo "❌ Pipeline failed!"
         }
     }
 }
