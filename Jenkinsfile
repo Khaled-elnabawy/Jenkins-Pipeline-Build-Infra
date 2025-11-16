@@ -1,17 +1,12 @@
 pipeline {
     agent any
 
-    environment {
-        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
-    }
-
     stages {
 
         stage('Checkout Code') {
             steps {
                 echo "🔹 Checking out repository..."
-                git branch: 'master', url: 'https://github.com/Ahmedlebshten/Jenkins-Pipeline-Project'
+                git branch: 'master', url: 'https://github.com/Ahmedlebshten/Jenkins-Pipeline-Build-Infra'
             }
         }
 
@@ -28,7 +23,7 @@ pipeline {
                 sh 'terraform plan -out=tfplan'
             }
         }
-/*
+
         stage('Terraform Apply') {
             steps {
                 echo "🔹 Applying Terraform..."
@@ -36,7 +31,8 @@ pipeline {
                 echo "✅ Infrastructure deployed successfully!"
             }
         }
-*/
+
+        /*
         stage('Terraform Destroy') {
             steps {
                 echo "🗑️ Destroying Terraform infrastructure..."
@@ -44,6 +40,7 @@ pipeline {
                 echo "🔥 Infrastructure destroyed successfully!"
             }
         }
+        */
     }
 
     post {
