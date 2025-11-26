@@ -23,7 +23,8 @@ pipeline {
                 sh 'terraform plan -out=tfplan'
             }
         }
-/*
+
+        
         stage('Terraform Apply') {
             steps {
                 echo "🔹 Applying Terraform..."
@@ -63,7 +64,46 @@ pipeline {
             }
         }
 
-        */
+        stage('Create ArgoCD Application') {
+            steps {
+                sh '''
+                  set -e
+
+                  export AWS_REGION=us-east-1
+                  export CLUSTER_NAME=hello-devops-production-cluster
+
+                  echo "🔹 Updating kubeconfig..."
+                  aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+                  echo "🔹 Creating ArgoCD Application..."
+
+                  kubectl apply -f - <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: helloapp
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ahmedlebshten/ArgoCD-Pipeline.git
+    targetRevision: HEAD
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
+
+                  echo "🎉 ArgoCD Application Created Successfully!"
+                '''
+            }
+        }
+        
+/*
         stage('Terraform Destroy') {
             steps {
                 echo "🗑️ Destroying Terraform infrastructure..."
@@ -71,8 +111,7 @@ pipeline {
                 echo "🔥 Infrastructure destroyed successfully!"
             }
         }
-        
-
+        */
     }
 
     post {
