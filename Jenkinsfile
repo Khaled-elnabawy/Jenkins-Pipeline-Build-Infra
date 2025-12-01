@@ -51,7 +51,7 @@ pipeline {
         echo "🎉 Infra pipeline succeeded — triggering downstream pipelines..."
 
         // Trigger CD pipeline that installs ArgoCD on the cluster
-        build job: 'CD-Install-ArgoCD', wait: false, propagate: false
+        build job: 'CI-Install-ArgoCD', wait: false, propagate: false
 
         // Trigger CD pipeline that creates the ArgoCD Application
         build job: 'CD-Create-ArgoCD-Application', wait: false, propagate: false
