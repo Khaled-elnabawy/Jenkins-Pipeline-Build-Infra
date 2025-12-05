@@ -38,7 +38,7 @@ pipeline {
             steps {
                 echo "🗑️ Destroying Terraform infrastructure..."
                 sh 'terraform destroy -auto-approve'
-                echo "🔥 Infrastructure destroyed successfully!"
+                echo "✅ Infrastructure destroyed successfully!"
             }
         }
         
@@ -46,18 +46,22 @@ pipeline {
 
     post {
     success {
-        echo "🎉 Infra pipeline succeeded — triggering downstream pipelines..."
+        echo "✅ Infra pipeline succeeded — triggering downstream pipelines..."
 
         // Trigger Install-ArgoCD pipeline that install ArgoCD on EKS cluster
         build job: 'Install-ArgoCD', wait: false, propagate: false
 
-        // Trigger CD pipeline that creates the ArgoCD Application
+        // delay before triggering CD-Create-ArgoCD-Application pipeline
+        echo "⏳ Waiting 20 seconds before triggering CD-Create-ArgoCD-Application pipeline..."
+        sh "sleep 20"
+
+        // Trigger CD-Create-ArgoCD-Application pipeline 
         build job: 'CD-Create-ArgoCD-Application', wait: false, propagate: false
 
-        // Trigger monitoring pipeline that 
+        // Trigger monitoring pipeline  
         build job: 'CD-Create-Monitoring-Application', wait: false, propagate: false
 
-        echo "🔔 Downstream CD pipelines triggered successfully!"
+        echo "✅ Downstream CD pipelines triggered successfully!"
     }
 
     failure {
