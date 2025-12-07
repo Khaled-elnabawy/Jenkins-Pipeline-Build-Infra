@@ -18,8 +18,8 @@ stage('Install ArgoCD + IAM Mapping') {
                     eksctl create iamidentitymapping \
                       --region $AWS_REGION \
                       --cluster $CLUSTER_NAME \
-                      --arn arn:aws:iam::420606830171:role/Jenkins-EC2-Role \
-                      --username jenkins-ec2-role \
+                      --arn arn:aws:iam::442956084249:user/jenkins-user \
+                      --username jenkins-user \
                       --group system:masters || true
 
                     echo "🔹 Installing ArgoCD..."
